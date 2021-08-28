@@ -1,6 +1,6 @@
 "use strict";
-//const BAUD_RATE = 1200;
-const BAUD_RATE = 9600; // TODO: add user setting and close button
+const BAUD_RATE = 1200;
+// const BAUD_RATE = 9600; // TODO: add user setting and close button
 const BLK_GEN = 0x51;
 const BLK_BAS = 0x52;
 const BLK_PAS = 0x53;
@@ -22,38 +22,15 @@ const blockKeys = {
 
 class BafangConfig {
     constructor() {
-        this.encoder = new TextEncoder();
-        this.decoder = new TextDecoder();
         this.byteCount = 0;
         this.buffer = null;
     }
-    data = {}; // NOTE: when writing to file, skip "info" block
+    data = {}; // NOTE: when reading file, skip "info" block, or compare with current info block!
 
     // callbacks
     onResponse = function(blk, err) {};
     onSerialConnect = function(port) {};
     
-    processReadResponse(buf) {
-        const blk = buf[0];
-        if(blk < BLK_GEN || blk > BLK_THR) {
-            this.logError("Unexpected block in response, ignoring");
-        } else {
-            this.data[blockKeys[blk]] = this.parseData(buf);
-            this.onResponse(blk, null);
-            this.logMsg("Read successful");
-        }
-    }
-    parseData(buf) {
-        const blk = buf[0];
-        console.log("Got block:",blockKeys[blk]);
-        switch(blk) {
-            case BLK_GEN: return this.parseGenData(buf);
-            case BLK_BAS: return this.parseBasData(buf);
-            case BLK_PAS: return this.parsePasData(buf);
-            case BLK_THR: return this.parseThrData(buf);
-            break;
-        }
-    }
     parseGenData(buf) {
         let voltage = buf[16] > 4 ? "24V-60V" : ["24V","36V","48V","60V","24V-48V"][buf[16]];
         return {
@@ -65,12 +42,13 @@ class BafangConfig {
             max_current:    buf[17],
         };
     }
+    speedModels = ["External","Internal","Motorphase"];
     parseBasData(buf) {
         let data = {
             low_battery_protect:    buf[2],
             current_limit:          buf[3],
             wheel_size:             buf[24]==0x37 ? "700C" : (Math.ceil(buf[24]/2) + '"'),
-            speedmeter_model:       ["External","Internal","Motorphase"][buf[25] >> 6],
+            speedmeter_model:       this.speedModels[buf[25] >> 6],
             speedmeter_signals:     buf[25] & 63,
         };
         for(i=0;i<10;i++) {
@@ -79,9 +57,25 @@ class BafangConfig {
         }
         return data;
     }
+    makeBasData(data) {
+        let buf = [
+            data["low_battery_protect"],
+            data["current_limit"],
+        ];
+        for(i=0;i<10;i++)
+            buf.push(data["assist"+i+"_current"]);
+        for(i=0;i<10;i++)
+            buf.push(data["assist"+i+"_speed"]);
+        buf.push(data["wheel_size"] == "700C" ? 0x37 : parseInt(data["wheel_size"])*2);
+        let spd_sigs = data["speedmeter_signals"] & 63;
+        let spd_model = Math.max(0,this.speedModels.indexOf(data["speedmeter_model"]));
+        buf.push(spd_model << 6 | spd_sigs);
+        return buf;
+    }
+    pedalTypes = ["None","DH-Sensor-12","BB-Sensor-32","DoubleSignal-24"];
     parsePasData(buf) {
         return {
-            pedal_type:         ["None","DH-Sensor-12","BB-Sensor-32","DoubleSignal-24"][buf[2]],
+            pedal_type:         this.pedalTypes[buf[2]],
             designated_assist:  buf[3]==0xff?"Display":buf[3],
             speed_limit:        buf[4]==0xff?"Display":buf[4],
             start_current:      buf[5],
@@ -94,6 +88,21 @@ class BafangConfig {
             keep_current:       buf[12],
         };
     }
+    makePasData(data) {
+        return [
+            Math.max(0,this.pedalTypes.indexOf(data["pedal_type"])),
+            data["designated_assist"] == "Display" ? 0xff : data["designated_assist"],
+            data["speed_limit"] == "Display" ? 0xff : data["speed_limit"],
+            data["start_current"],
+            data["slow_start_mode"],
+            data["startup_degree"],
+            data["work_mode"] == "Undetermined" ? 0xff : data["work_mode"],
+            data["time_of_stop"],
+            data["current_decay"],
+            data["stop_decay"],
+            data["keep_current"]
+        ];
+    }
     parseThrData(buf) {
         return {
             start_voltage:      buf[2],
@@ -103,16 +112,6 @@ class BafangConfig {
             speed_limit:        buf[6]==0xff?"Display":buf[6],
             start_current:      buf[7],
         };
-    }
-    makeBasData(data) {
-        return [
-            // TODO
-        ];
-    }
-    makePasData(data) {
-        return [
-            // TODO
-        ];
     }
     makeThrData(data) {
         return [
@@ -124,6 +123,17 @@ class BafangConfig {
             data["start_current"],
         ];
     }
+    parseData(buf) {
+        const blk = buf[0];
+        console.log("Got block:",blockKeys[blk]);
+        switch(blk) {
+            case BLK_GEN: return this.parseGenData(buf);
+            case BLK_BAS: return this.parseBasData(buf);
+            case BLK_PAS: return this.parsePasData(buf);
+            case BLK_THR: return this.parseThrData(buf);
+        }
+        return null;
+    }
     prepareWriteData(blk, buf) {
         let data = [CMD_WRITE, blk, buf.length];
         data = data.concat(buf);
@@ -131,26 +141,45 @@ class BafangConfig {
         console.log("Prepare to write:",data);
         return data;
     }
-    async writeBlock(blk) {
-        let data = null;
+    bytesForBlock(blk) {
         let key = blockKeys[blk];
         switch(blk) {
-            case BLK_BAS:
-            data = this.makeBasData(this.data[key]);
-            break;
-            case BLK_PAS:
-            data = this.makePasData(this.data[key]);
-            break;
-            case BLK_THR:
-            data = this.makeThrData(this.data[key]);
-            break;
+            case BLK_BAS: return this.makeBasData(this.data[key]);
+            case BLK_PAS: return this.makePasData(this.data[key]);
+            case BLK_THR: return this.makeThrData(this.data[key]);
         }
+        return null;
+    }
+    async writeBlock(blk) {
+        let data = bytesForBlock(blk);
         data = this.prepareWriteData(blk, data);
         //this.expectBytes(2);
         //this.expectMode = CMD_WRITE; // so that listen() can know if it's data or result code?
         //return this.write(data);
     }
-
+    processReadResponse(buf) {
+        const blk = buf[0];
+        if(blk < BLK_GEN || blk > BLK_THR) {
+            this.logError("Unexpected block in response, ignoring");
+        } else {
+            const key = blockKeys[blk];
+            this.data[key] = this.parseData(buf);
+            this.onResponse(blk, null);
+            this.logMsg("Read successful");
+            
+            // Verify that our byte generation code works.
+            // Note this can fail on wheelsize since two values equals the same size..
+            let org = buf.slice(2,-1);
+            let xxx = this.bytesForBlock(blk);
+            if(xxx.length === org.length && org.every((v,i) => v===xxx[i])) {
+                console.log("Internal byte generation check successful");
+            } else {
+                console.log("Internal byte generation check failed!");
+                console.log("READ",org);
+                console.log("WRITE",xxx);
+            }
+        }
+    }
     async listen() {
         const reader = this.reader;
 
@@ -167,11 +196,11 @@ class BafangConfig {
             if(this.byteCount > 0 && this.buffer) {
                 this.byteCount = 0;
                 // GEN
-                this.buffer = [0x51,0x10,0x48,0x5A,0x58,0x54,0x53,0x5A,0x5A,0x36,0x32,0x32,0x32,0x30,0x31,0x31,0x01,0x14,0x1B];
+                //this.buffer = [0x51,0x10,0x48,0x5A,0x58,0x54,0x53,0x5A,0x5A,0x36,0x32,0x32,0x32,0x30,0x31,0x31,0x01,0x14,0x1B];
                 // BAS
-                // this.buffer = [0x52, 0x18, 0x1F, 0x0F, 0x00, 0x1C, 0x25, 0x2E, 0x37, 0x40, 0x49, 0x52, 0x5B, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x37, 0x01, 0xDF];
+                // this.buffer = [0x52, 0x18, 0x1F, 0x0F, 0x00, 0x1C, 0x25, 0x2E, 0x37, 0x40, 0x49, 0x52, 0x5B, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x35, 0x42, 0xDF];
                 // PAS
-                //this.buffer = [0x53, 0x0B, 0x03, 0xFF, 0xFF, 0x64, 0x06, 0x14, 0x0A, 0x19, 0x08, 0x14, 0x14, 0x27];
+                this.buffer = [0x53, 0x0B, 0x03, 0xFF, 0xFF, 0x64, 0x06, 0x14, 0x0A, 0x19, 0x08, 0x14, 0x14, 0x27];
                 // THR
                 // this.buffer = [0x54, 0x06, 0x0B, 0x23, 0x00, 0x03, 0x11, 0x14, 0xAC];
                 this.processReadResponse(this.buffer);
@@ -199,11 +228,13 @@ class BafangConfig {
         const node = document.getElementById('error-display');
         node.style.color = "red";
         node.innerText = msg.join('\n');
+        console.log("ERROR:",msg.join(" "));
     }
     logMsg(...msg) {
         const node = document.getElementById('error-display');
         node.style.color = "green";
         node.innerText = msg.join('\n');
+        console.log("LOG:",msg.join(" "));
     }
     async init() {
         if ('serial' in navigator) {
