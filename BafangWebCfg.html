@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bafang Web Config</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin-bottom: 10em;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    table {
+      border: 0; /*1px solid gray;*/
+      border-collapse: collapse;
+      width: 100%;
+    }
+    td, th {
+      border: 0;
+      border-top: 1px solid gray;
+      padding: 5px;
+      border: 1px solid gray;
+    }
+    th {
+      text-align: left;
+    }
+    td {
+      min-width: 20ex;
+      text-align: left;
+      background: #eee;
+      font-family: monospace;
+    }
+    div.block {
+      margin-top: 1em;
+    }
+    h1 {
+      border-bottom: 2px solid black;
+    }
+    h2 {
+      /*border-bottom: 1px solid black;*/
+      background: #777;
+      color: white;
+      padding: 10px;
+    }
+    button {
+      margin-bottom: 1em;
+    }
+    input {
+      border: 0;
+      font: inherit;
+      background: transparent;
+    }
+    div.creds {
+      margin-top: 2em;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+  <h1>Bafang BBSxx Configuration</h1>
+  <div>
+    <button id="connect-to-serial">Open serial port</button>
+    <span id="error-display"></span>
+  </div>
+  <!--<button id="get-serial-messages">Get serial messages</button>-->
+  <div>
+    <!--<form id="message-form">-->
+    <!--  <input type="text" id="message-input"> 
+      <button type="submit" id="submit-button">Send</button>-->
+      <button id="read-gen" type="button" disabled=1>Connect controller</button>
+    </div>
+  <div class="block">
+    <h2>Info</h2>
+    <table id="info">
+    <tbody>
+    <tr><th>Manufacturer</th> <td id="manufacturer"></td></tr>
+    <tr><th>Model</th><td id="model"></td></tr>
+    <tr><th>HW Version</th><td id="hw_ver"></td></tr>
+    <tr><th>FW Version</th><td id="fw_ver"></td></tr>
+    <tr><th>Voltage</th><td id="voltage"></td></tr>
+    <tr><th>Max Current</th><td id="max_current"></td></tr>
+    </tbody>
+    </table>
+  </div>
+
+  <div class="block">
+    <h2>Basic</h2>
+    <button id="read-bas" type="button" disabled=1>Read</button>
+    <button id="write-bas" type="button" disabled=1>Write</button>
+    <table id="basic">
+    <tbody>
+      <tr><th colspan="2">Low Battery Protect (V)</th> <td contenteditable='true' id="low_battery_protect"></td></tr>
+      <tr><th colspan="2">Current Limit (A)</th> <td contenteditable='true' id="current_limit"></td></tr>
+      <tr><th colspan="2">Wheel Diameter</th> <td><input list="wheel-sizes" id="wheel_size"/></td></tr>
+      <datalist id="wheel-sizes">
+        <option value='16"'/>
+        <option value='17"'/>
+        <option value='18"'/>
+        <option value='19"'/>
+        <option value='20"'/>
+        <option value='21"'/>
+        <option value='22"'/>
+        <option value='23"'/>
+        <option value='24"'/>
+        <option value='25"'/>
+        <option value='26"'/>
+        <option value='27"'/>
+        <option value='28"'/>
+        <option value='29"'/>
+        <option value='30"'/>
+        <option value='700C'/>
+      </datalist>
+      <tr><th colspan="2">Speedmeter Model</th> <td><input list="speedmeter-models" id="speedmeter_model"/></td></tr>
+    <datalist id="speedmeter-models">
+      <option value="External"/>
+      <option value="Internal"/>
+      <option value="Motorphase"/>
+    </datalist>
+
+      <tr><th colspan="2">Speedmeter Signals</th> <td contenteditable='true' id="speedmeter_signals"></td></tr>
+      <tr><th colspan="3" style="border:0;"></th></tr>
+      <tr><th>Assist</th><th>Current (%)</th><th>Speed (%)</th></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="block">
+    <h2>Pedal Assist</h2>
+    <button id="read-pas" type="button" disabled=1>Read</button>
+    <button id="write-pas" type="button" disabled=1>Write</button>
+    <table id="pedal">
+    <tbody>
+      <tr><th>Pedal Type</th> <td><input list="pedal-types" id="pedal_type"/></td></tr>
+      <datalist id="pedal-types">
+        <option value="None"/>
+        <option value="DH-Sensor-12"/>
+        <option value="BB-Sensor-32"/>
+        <option value="DoubleSignal-24"/>
+      </datalist>
+      <tr><th>Designated Assist (0-9)</th> <td><input list="designated-assists" id="designated_assist"/></td></tr>
+      <tr><th>Speed Limit (km/h)</th> <td><input list="by-display" id="speed_limit"/></td></tr>
+      <tr><th>Start Current (%)</th> <td contenteditable='true' id="start_current"></td></tr>
+      <tr><th>Slow-Start Mode (1-8)</th> <td><input list="one-to-eight" id="slow_start_mode"/></td></tr>
+      <tr><th>Startup Degree (Signal No.)</th> <td contenteditable='true' id="startup_degree"></td></tr>
+      <tr><th>Work Mode (pedal/wheel*10)</th> <td><input list="work-modes" id="work_mode"/></td></tr>
+      <datalist id="work-modes">
+        <option value="Undetermined" />
+      </datalist>
+      <tr><th>Time of Stop (x 10 ms)</th> <td contenteditable='true' id="time_of_stop"></td></tr>
+      <tr><th>Current Decay (1-8)</th> <td><input list="one-to-eight" id="current_decay"/></td></tr>
+      <tr><th>Stop Decay (x 10 ms)</th> <td contenteditable='true' id="stop_decay"></td></tr>
+      <tr><th>Keep Current (%)</th> <td contenteditable='true' id="keep_current"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <datalist id="by-display">
+    <option value="Display"/>
+  </datalist>
+  <datalist id="designated-assists">
+    <option value="0"/>
+    <option value="1"/>
+    <option value="2"/>
+    <option value="3"/>
+    <option value="4"/>
+    <option value="5"/>
+    <option value="6"/>
+    <option value="7"/>
+    <option value="8"/>
+    <option value="9"/>
+    <option value="Display"/>
+  </datalist>
+  <datalist id="one-to-eight">
+    <option value="1"/>
+    <option value="2"/>
+    <option value="3"/>
+    <option value="4"/>
+    <option value="5"/>
+    <option value="6"/>
+    <option value="7"/>
+    <option value="8"/>    
+  </datalist>
+
+  
+  <div class="block">
+    <h2>Throttle</h2>
+    <button id="read-thr" type="button" disabled=1>Read</button>
+    <button id="write-thr" type="button" disabled=1>Write</button>
+    <table id="throttle">
+    <tbody>
+      <tr><th>Start Voltage (x 100 mV)</th> <td contenteditable='true' id="start_voltage"></td></tr>
+      <tr><th>End Voltage (x 100 mV)</th> <td contenteditable='true' id="end_voltage"></td></tr>
+      <tr><th>Mode</th> <td><input list="throttle-modes" id="mode" /></td></tr>
+      <datalist id="throttle-modes">
+        <option value="Speed"/>
+        <option value="Current"/>
+      </datalist>
+      <tr><th>Designated Assist (0-9)</th> <td><input list="designated-assists" id="designated_assist"/></td></tr>
+      <tr><th>Speed Limit (km/h)</th> <td><input list="by-display" id="speed_limit"/></td></tr>
+      <tr><th>Start Current (%)</th> <td contenteditable='true' id="start_current"></td></tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <pre id="serial-messages-container"></pre>
+
+  <div class="creds">(C)2021 Jonatan Liljedahl - <a href="http://kymatica.com">www.kymatica.com</a></div>
+
+  <script src="./app.js"></script>
+  <script>
+    const bafang = new BafangConfig();
+    const connectButton = document.getElementById('connect-to-serial');
+    const serialMessagesContainer = document.getElementById('serial-messages-container');
+    const readGenButton = document.getElementById('read-gen');
+    const readBasButton = document.getElementById('read-bas');
+    const readPasButton = document.getElementById('read-pas');
+    const readThrButton = document.getElementById('read-thr');
+    const writeBasButton = document.getElementById('write-bas');
+    const writePasButton = document.getElementById('write-pas');
+    const writeThrButton = document.getElementById('write-thr');
+
+    window.onload = () => {
+      const t = document.querySelector("table#basic");
+      for(i=0;i<10;i++) {
+        let row = t.insertRow();
+        let th = document.createElement("th");
+        th.innerText = i;
+        row.appendChild(th);
+        let cell1 = row.insertCell();
+        cell1.setAttribute("contenteditable",true);
+        cell1.id = "assist"+i+"_current";
+        let cell2 = row.insertCell();
+        cell2.setAttribute("contenteditable",true);
+        cell2.id = "assist"+i+"_speed";
+      }
+    };
+
+    function updateTable(name, info) {
+      if(!info) info = bafang.data[name];
+      const infoTable = document.querySelector("table#"+name);
+      for (key in info) {
+          const e = infoTable.querySelector("#"+key);
+          if(e.tagName == "INPUT")
+            e.value = info[key];
+          else
+            e.innerText = info[key];
+      }
+    }
+
+    bafang.onResponse = (blk, err) => {
+      switch(blk) {
+        case BLK_GEN:
+          console.log("CONTROLLER FOUND");
+          for (b of [readBasButton, readPasButton, readThrButton]) {
+            b.removeAttribute('disabled');
+          }
+        break;
+        case BLK_BAS:
+          writeBasButton.removeAttribute('disabled');
+        break;
+        case BLK_PAS:
+          writePasButton.removeAttribute('disabled');
+        break;
+        case BLK_THR:
+          writeThrButton.removeAttribute('disabled');
+        break;
+      }
+
+      updateTable("info");
+      updateTable("basic");
+      updateTable("pedal");
+      updateTable("throttle");
+      
+      serialMessagesContainer.innerText = JSON.stringify(bafang.data,null,2);
+    };
+    
+    bafang.onSerialConnect = (port) => {
+      readGenButton.removeAttribute('disabled');
+      //console.log(port); // TODO: would be nice if we could get the port name here!
+      // FOR TESTING:
+      for (b of [readBasButton, readPasButton, readThrButton]) {
+        b.removeAttribute('disabled');
+      }
+    };
+    
+    connectButton.addEventListener('click', () => {
+      bafang.init();
+    });
+
+    readGenButton.addEventListener('click', () => {
+      bafang.connectDevice();
+    });
+
+    readBasButton.addEventListener('click', () => {
+      bafang.readBlock(BLK_BAS);
+    });
+    readPasButton.addEventListener('click', () => {
+      bafang.readBlock(BLK_PAS);
+    });
+    readThrButton.addEventListener('click', () => {
+      bafang.readBlock(BLK_THR);
+    });
+    
+    writeBasButton.addEventListener('click', () => {
+      bafang.writeBlock(BLK_BAS);
+    });
+    writePasButton.addEventListener('click', () => {
+      bafang.writeBlock(BLK_PAS);
+    });
+    writeThrButton.addEventListener('click', () => {
+      bafang.writeBlock(BLK_THR);
+    });
+
+    navigator.serial.addEventListener("connect", (event) => {
+      // TODO: Automatically open event.target or warn user a port is available.
+      console.log("Connected "+event.target);
+    });
+
+    navigator.serial.addEventListener("disconnect", (event) => {
+      // TODO: Remove |event.target| from the UI.
+      // If the serial port was opened, a stream error would be observed as well.
+      console.log("Disconnected "+event.target);
+    });
+
+  </script>
+
+</body></html>
