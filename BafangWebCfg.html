@@ -26,7 +26,7 @@
       text-align: left;
     }
     td {
-      /*min-width: 20ex;*/
+      min-width: 10ex;
       text-align: left;
       background: #eee;
       font-family: monospace;
@@ -58,13 +58,22 @@
       margin-top: 2em;
       text-align: right;
     }
+    div#error-display {
+      min-height: 1em;
+      padding: 5px;
+      background: #eee;
+      text-align: center;
+    }
+    .highlight-error {
+      background: yellow;
+    }
   </style>
 </head>
 <body>
   <h1>Bafang BBSxx Configuration</h1>
   <div>
     <button id="connect-to-serial">Open serial port</button>
-    <span id="error-display"></span>
+    
   </div>
   <!--<button id="get-serial-messages">Get serial messages</button>-->
   <div>
@@ -73,6 +82,7 @@
       <button type="submit" id="submit-button">Send</button>-->
       <button id="read-gen" type="button" disabled=1>Connect controller</button>
     </div>
+    <div id="error-display"></div>
   <div class="block">
     <h2>Info</h2>
     <table id="info">
@@ -250,7 +260,24 @@
       }
     }
 
-    bafang.onResponse = (blk, err) => {
+    function clearErrorHL() {
+      let a = document.querySelectorAll(".highlight-error");
+      for (e of a)
+        e.classList.remove("highlight-error");
+    }
+
+    bafang.onWrite = (blk, ok) => {
+      clearErrorHL();
+      if(!ok) {
+        window.scrollTo({top:0, behaviour: 'smooth'});
+        console.log("Error at",bafang.resultBlock,bafang.resultKey);
+        let e = document.querySelector("table#"+bafang.resultBlock+" #"+bafang.resultKey);
+        e.classList.add("highlight-error");
+      }
+    };
+
+    bafang.onRead = (blk) => {
+      clearErrorHL();
       switch(blk) {
         case BLK_GEN:
           console.log("CONTROLLER FOUND");
@@ -281,7 +308,8 @@
       readGenButton.removeAttribute('disabled');
       //console.log(port); // TODO: would be nice if we could get the port name here!
       // FOR TESTING:
-      for (b of [readBasButton, readPasButton, readThrButton]) {
+      //for (b of [readBasButton, readPasButton, readThrButton]) {
+        for (b of [writeBasButton, writePasButton, writeThrButton, readBasButton, readPasButton, readThrButton]) {
         b.removeAttribute('disabled');
       }
     };
