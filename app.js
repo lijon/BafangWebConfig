@@ -1,6 +1,14 @@
 "use strict";
+/*
+TODO:
+- reset button for each field, resets to last read value (bafang.data[blk][key])
+- batch read/write, just iterate from BLK_BAS to BLK_THR
+- use select instead of datalist input for fixed choice options?
+- baud user setting and close button
+- handle disconnects etc gracefully
+*/
 const BAUD_RATE = 1200;
-// const BAUD_RATE = 9600; // TODO: add user setting and close button
+// const BAUD_RATE = 9600;
 const BLK_GEN = 0x51;
 const BLK_BAS = 0x52;
 const BLK_PAS = 0x53;
@@ -143,11 +151,9 @@ class BafangConfig {
     parseBasCode(code) {
         let lvl=0;
         switch(code) {
-            case 0: this.logError('Basic: Low Battery Protection out of range!');
-            this.resultKey = "low_battery_protect";
+            case 0: return ['Basic: Low Battery Protection out of range!', "low_battery_protect"];
             break;
-            case 1: this.logError('Basic: Current Limit out of range!');
-            this.resultKey = "current_limit";
+            case 1: return ['Basic: Current Limit out of range!', "current_limit"];
             break;
             case 2: //0
             case 4: //1
@@ -160,8 +166,7 @@ class BafangConfig {
             case 18: //8
             case 20: //9
                 lvl = (code-2)/2;
-                this.logError('Basic: Current Limit for Assist '+lvl+' out of range!');
-                this.resultKey = "assist"+lvl+"_current";
+                return ['Basic: Current Limit for Assist '+lvl+' out of range!',"assist"+lvl+"_current"];
             break;
             case 3:
             case 5:
@@ -174,81 +179,61 @@ class BafangConfig {
             case 19:
             case 21:
                 lvl = (code-3)/2;
-                this.logError('Basic: Speed Limit for Assist '+lvl+' out of range!');
-                this.resultKey = "assist"+lvl+"_speed";
+                return ['Basic: Speed Limit for Assist '+lvl+' out of range!', "assist"+lvl+"_speed"];
             break;
-            case 22: this.logError('Basic: Wheel Diameter out of range!');
-            this.resultKey = "wheel_size";
+            case 22: return ['Basic: Wheel Diameter out of range!', "wheel_size"];
             break;
-            case 23: this.logError('Basic: Speed Meter Signals out of range!');
-            this.resultKey = "speedmeter_signals";
+            case 23: return ['Basic: Speed Meter Signals out of range!', "speedmeter_signals"];
             break;
-            case 24: return true;
+            case 24: return null;
         }
-        return false;
+        return ['Unknown result code: '+code,null];
     }
     parsePasCode(code) {
         switch(code) {
-            case 0: this.logError('Pedal: Pedal Sensor Type error!');
-            this.resultKey = "pedal_type";
+            case 0: return ['Pedal: Pedal Sensor Type error!', "pedal_type"];
             break;
-            case 1: this.logError('Pedal: Designated Assist Level error!');
-            this.resultKey = "designated_assist";
+            case 1: return ['Pedal: Designated Assist Level error!', "designated_assist"];
             break;
-            case 2: this.logError('Pedal: Speed Limit error!');
-            this.resultKey = "speed_limit";
+            case 2: return ['Pedal: Speed Limit error!', "speed_limit"];
             break;
-            case 3: this.logError('Pedal: Current out of range!');
-            this.resultKey = "current_limit";
+            case 3: return ['Pedal: Current out of range!', "current_limit"];
             break;
-            case 4: this.logError('Pedal: Slow-start Mode error!');
-            this.resultKey = "slow_start_mode";
+            case 4: return ['Pedal: Slow-start Mode error!', "slow_start_mode"];
             break;
-            case 5: this.logError('Pedal: Start Degree out of range!');
-            this.resultKey = "startup_degree";
+            case 5: return ['Pedal: Start Degree out of range!', "startup_degree"];
             break;
-            case 6: this.logError('Pedal: Work Mode error!');
-            this.resultKey = "work_mode";
+            case 6: return ['Pedal: Work Mode error!', "work_mode"];
             break;
-            case 7: this.logError('Pedal: Time of Stop out of range!');
-            this.resultKey = "time_of_stop";
+            case 7: return ['Pedal: Time of Stop out of range!', "time_of_stop"];
             break;
-            case 8: this.logError('Pedal: Current Decay out of range!');
-            this.resultKey = "current_decay";
+            case 8: return ['Pedal: Current Decay out of range!', "current_decay"];
             break;
-            case 9: this.logError('Pedal: Stop Decay out of range!');
-            this.resultKey = "stop_decay";
+            case 9: return ['Pedal: Stop Decay out of range!', "stop_decay"];
             break;
-            case 10: this.logError('Pedal: Keep Current out of range!');
-            this.resultKey = "keep_current";
+            case 10: return ['Pedal: Keep Current out of range!', "keep_current"];
             break;
-            case 11: return true;
+            case 11: return null;
         }
-        return false;
+        return ['Unknown result code: '+code,null];
     }
     parseThrCode(code) {
         switch(code) {
-            case 0: this.logError('Throttle: Start Voltage out of range!');
-            this.resultKey = "start_voltage";
+            case 0: return ['Throttle: Start Voltage out of range!', "start_voltage"];
             break;
-            case 1: this.logError('Throttle: End Voltage out of range!');
-            this.resultKey = "end_voltage";
+            case 1: return ['Throttle: End Voltage out of range!', "end_voltage"];
             break;
-            case 2: this.logError('Throttle: Mode error!');
-            this.resultKey = "mode";
+            case 2: return ['Throttle: Mode error!', "mode"];
             break;
-            case 3: this.logError('Throttle: Designated Assist error!');
-            this.resultKey = "designated_assist";
+            case 3: return ['Throttle: Designated Assist error!', "designated_assist"];
             break;
-            case 4: this.logError('Throttle: Speed Limit error!');
-            this.resultKey = "speed_limit";
+            case 4: return ['Throttle: Speed Limit error!', "speed_limit"];
             break;
-            case 5: this.logError('Throttle: Start Current out of range!');
-            this.resultKey = "start_current";
+            case 5: return ['Throttle: Start Current out of range!', "start_current"];
             break;
-            case 6: return true;
+            case 6: return null;
         }
-        return false;
+        return ['Unknown result code: '+code,null];
     }
     parseResultCode(buf) {
         const blk = buf[0];
@@ -261,7 +246,7 @@ class BafangConfig {
             case BLK_THR: return this.parseThrCode(code);
         }
         console.log("parseResultCode: Unknown block",blk);
-        return false;
+        return null;
     }
     prepareWriteData(blk, buf) {
         let data = [CMD_WRITE, blk, buf.length];
@@ -281,6 +266,7 @@ class BafangConfig {
         return null;
     }
     async writeBlock(blk) {
+        this.parseTable(blockKeys[blk]);
         let data = this.bytesForBlock(blk);
         data = this.prepareWriteData(blk, data);
         this.expectBytes(2, CMD_WRITE);
@@ -288,17 +274,17 @@ class BafangConfig {
     }
     processResponse(buf) {
         const blk = buf[0];
-        if(blk < BLK_GEN || blk > BLK_THR) {
-            this.logError("Unexpected block in response, ignoring");
+        const key = blockKeys[blk];
+        if(!key) {
+            this.logError(BLK_GEN, "Unexpected block in response, ignoring");
         } else if(this.lastCmd == CMD_READ) {
-            const key = blockKeys[blk];
             this.data[key] = this.parseData(buf);
             this.onRead(blk);
-            this.logMsg("Read successful");
+            this.logMsg(blk, "Read successful");
             
             // Verify that our byte generation code works.
             // Note this can fail on wheelsize since two values equals the same size..
-            let org = buf.slice(2,-1);
+            /*let org = buf.slice(2,-1);
             let xxx = this.bytesForBlock(blk);
             if(xxx.length === org.length && org.every((v,i) => v===xxx[i])) {
                 console.log("Internal byte generation check successful");
@@ -306,12 +292,16 @@ class BafangConfig {
                 console.log("Internal byte generation check failed!");
                 console.log("READ",org);
                 console.log("WRITE",xxx);
-            }
+            }*/
         } else if(this.lastCmd == CMD_WRITE) {
-            const ok = this.parseResultCode(buf);
-            if(ok)
-                this.logMsg("Write successful");
-            this.onWrite(blk, ok);
+            const res = this.parseResultCode(buf);
+            if(!res) {
+                this.logMsg(blk, "Write successful");
+                this.onWrite(blk, null);
+            } else {
+                this.logError(blk, res[0]);
+                this.onWrite(blk, res[1]);
+            }
         }
     }
     async listen() {
@@ -326,6 +316,7 @@ class BafangConfig {
             }
             console.log("read "+value);
 
+            /*
             // DUMMY TEST WITH LOOP BACK DEVICE
             if(this.byteCount > 0 && this.buffer) {
                 this.byteCount = 0;
@@ -335,7 +326,7 @@ class BafangConfig {
                 if(this.lastCmd == CMD_READ)
                     this.buffer = [0x52, 0x18, 0x1F, 0x0F, 0x00, 0x1C, 0x25, 0x2E, 0x37, 0x40, 0x49, 0x52, 0x5B, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x35, 0x42, 0xDF];
                 else
-                    this.buffer = [0x52, 10];
+                    this.buffer = [0x52, 50];
                 // PAS
                 // this.buffer = [0x53, 0x0B, 0x03, 0xFF, 0xFF, 0x64, 0x06, 0x14, 0x0A, 0x19, 0x08, 0x14, 0x14, 0x27];
                 // THR
@@ -343,7 +334,8 @@ class BafangConfig {
                 
                 this.processResponse(this.buffer);
             }
-            /* THE REAL THING
+            */
+            
             for (const a of value) {    
                 if(this.byteCount > 0 && this.buffer) {
                     this.byteCount--;
@@ -357,20 +349,19 @@ class BafangConfig {
                     console.log("ignoring byte: 0x"+a.toString(16));
                 }
             }
-            */
         }
     }
-    logError(...msg) {
-        const node = document.getElementById('error-display');
+    logError(blk, ...msg) {
+        const node = document.querySelector('#'+blockKeys[blk]+'.error-display');
         node.style.color = "red";
         node.innerText = msg.join(' ');
-        console.log("ERROR:",msg.join(" "));
+        console.log("ERROR:",msg.join(' '));
     }
-    logMsg(...msg) {
-        const node = document.getElementById('error-display');
+    logMsg(blk, ...msg) {
+        const node = document.querySelector('#'+blockKeys[blk]+'.error-display');
         node.style.color = "green";
         node.innerText = msg.join(' ');
-        console.log("LOG:",msg.join(" "));
+        console.log("LOG:",msg.join(' '));
     }
     async init() {
         if ('serial' in navigator) {
@@ -388,7 +379,7 @@ class BafangConfig {
             catch (err) {
                 console.log(err);
                 if(err.name != "NotFoundError")
-                    this.logError('Could not open serial port:', err);
+                    this.logError(BLK_GEN,'Could not open serial port:',err);
             }
         }
         else {
@@ -412,7 +403,6 @@ class BafangConfig {
     }
     expectBytes(len, cmd) {
         console.log("expecting "+len+" bytes...");
-        this.logMsg("Waiting for response...");
         if(this.byteCount > 0)
             this.logError("Warning: Previous read not finished");
         this.lastCmd = cmd;
@@ -429,7 +419,43 @@ class BafangConfig {
     }
     async readBlock(blk) {
         let data = [CMD_READ, blk];
+        this.logMsg(blk,"Waiting for response...");
         this.expectBytes(blockNumBytes[blk], CMD_READ);
         return this.write(data);
+    }
+    readFile(f) {
+        let fr = new FileReader();
+        fr.onload = (e) => {
+            let oldInfo = this.data["info"];
+            this.data = JSON.parse(e.target.result);
+            if(oldInfo) this.data["info"] = oldInfo;
+            this.onRead(null);
+        };
+
+        fr.readAsText(f);
+    }
+    timestamp() {
+        let d = new Date();
+        return d.getFullYear() + "-"
+            + ("0"+(d.getMonth()+1)).slice(-2) + "-"
+            + ("0" + d.getDate()).slice(-2) + "_"
+            + ("0" + d.getHours()).slice(-2) + "-"
+            + ("0" + d.getMinutes()).slice(-2) + "-"
+            + ("0" + d.getSeconds()).slice(-2);
+    }
+    saveFile() {
+        for (let blk of [BLK_BAS, BLK_PAS, BLK_THR])
+            this.parseTable(blockKeys[blk]);
+        console.log(JSON.stringify(this.data, null, 2));
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(this.data, null, 2)], {
+            type: "application/json"
+        }));
+        let now = new Date();
+        a.setAttribute("download", "bafang_profile_"+this.timestamp()+".json"); // TODO append date
+        //a.setAttribute("target", "_blank"); // this had no SaveAs enabled in chrome
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 }
