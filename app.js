@@ -257,13 +257,19 @@ class BafangConfig {
     }
     bytesForBlock(blk) {
         let key = blockKeys[blk];
+        let buf = null;
         switch(blk) {
-            case BLK_BAS: return this.makeBasData(this.data[key]);
-            case BLK_PAS: return this.makePasData(this.data[key]);
-            case BLK_THR: return this.makeThrData(this.data[key]);
+            case BLK_BAS: buf = this.makeBasData(this.data[key]);
+            break;
+            case BLK_PAS: buf = this.makePasData(this.data[key]);
+            break;
+            case BLK_THR: buf = this.makeThrData(this.data[key]);
+            break;
+            default:
+                console.log("bytesForBlock: Unknown block",blk);
+                return null;
         }
-        console.log("bytesForBlock: Unknown block",blk);
-        return null;
+        return buf.map((e)=>{return parseInt(e)});
     }
     async writeBlock(blk) {
         this.parseTable(blockKeys[blk]);
@@ -446,7 +452,7 @@ class BafangConfig {
     saveFile() {
         for (let blk of [BLK_BAS, BLK_PAS, BLK_THR])
             this.parseTable(blockKeys[blk]);
-        console.log(JSON.stringify(this.data, null, 2));
+        //console.log(JSON.stringify(this.data, null, 2));
         const a = document.createElement("a");
         a.href = URL.createObjectURL(new Blob([JSON.stringify(this.data, null, 2)], {
             type: "application/json"
