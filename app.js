@@ -3,7 +3,6 @@
 TODO:
 - reset button for each field, resets to last read value (bafang.data[blk][key])
 - batch read/write, just iterate from BLK_BAS to BLK_THR
-- use select instead of datalist input for fixed choice options?
 - baud user setting and close button
 - handle disconnects etc gracefully
 */
@@ -33,7 +32,7 @@ class BafangConfig {
         this.byteCount = 0;
         this.buffer = null;
         this.lastCmd = 0;
-        this.data = {}; // NOTE: when reading file, skip "info" block, or compare with current info block!
+        this.data = {};
         this.resultBlock = "";
         this.resultKey = "";
     }
@@ -79,7 +78,7 @@ class BafangConfig {
         for(i=0;i<10;i++)
             buf.push(data["assist"+i+"_speed"]);
         buf.push(data["wheel_size"] == "700C" ? 0x37 : parseInt(data["wheel_size"])*2);
-        let spd_sigs = data["speedmeter_signals"] & 63;
+        let spd_sigs = parseInt(data["speedmeter_signals"]) & 63;
         let spd_model = Math.max(0,this.speedModels.indexOf(data["speedmeter_model"]));
         buf.push(spd_model << 6 | spd_sigs);
         return buf;
@@ -435,6 +434,14 @@ class BafangConfig {
             let oldInfo = this.data["info"];
             this.data = JSON.parse(e.target.result);
             if(oldInfo) this.data["info"] = oldInfo;
+            // convert number strings to numbers
+            for (let blk in this.data) {
+                for (let key in this.data[blk]) {
+                    let val = this.data[blk][key];
+                    let num = parseInt(val);
+                    if(num==val) this.data[blk][key] = num;
+                }
+            }
             this.onRead(null);
         };
 
