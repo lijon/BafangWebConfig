@@ -56,9 +56,14 @@
       width: 99%;
       padding-left: 4px;
     }
+    a {
+      text-decoration: none;
+    }
     div.creds {
       margin-top: 2em;
       text-align: right;
+      font-size: 80%;
+      color: #555;
     }
     .error-display {
       min-height: 1em;
@@ -87,15 +92,17 @@
   <h1>Bafang BBSxx Configuration</h1>
   <div>
     <button id="connect-to-serial">Open serial port</button>
-    <button id="read-gen" type="button" disabled=1>Connect controller</button>
+  </div>
+  <div>
     <button id="save-file" type="button" disabled=1>Save File</button>
+<!--    <label for="file-pick">Open File:</label>-->
+    <input type="file" id="file-pick"/>
     </div>
-    <div>
-        <input type="file" id="file-pick"/>
-    </div>
-    <div class="error-display" id="info"></div>
+
   <div class="block">
     <h2>Info</h2>
+    <button id="read-gen" type="button" disabled=1>Connect controller</button>
+    <div class="error-display" id="info"></div>
     <table id="info">
     <tbody>
     <tr><th>Manufacturer</th> <td id="manufacturer"></td></tr>
@@ -204,10 +211,16 @@
   
   <pre id="serial-messages-container"></pre>
 
-  <div class="creds">(C)2021 Jonatan Liljedahl - <a href="http://kymatica.com">www.kymatica.com</a></div>
+  <div class="creds">By Jonatan Liljedahl - <a href="http://kymatica.com">www.kymatica.com</a></div>
 
   <script src="./app.js"></script>
   <script>
+    /***********************************
+    Bafang Web Config
+
+    Copyright (c) 2021 Jonatan Liljedahl
+    ************************************/
+
     const bafang = new BafangConfig();
     const connectButton = document.getElementById('connect-to-serial');
     const serialMessagesContainer = document.getElementById('serial-messages-container');
