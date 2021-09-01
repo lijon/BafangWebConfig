@@ -1,6 +1,8 @@
 "use strict";
 /*
 TODO:
+
+- read on any section updates all from data, overwriting values
 - reset button for each field, resets to last read value (bafang.data[blk][key])
 - batch read/write, just iterate from BLK_BAS to BLK_THR
 - baud user setting and close button
@@ -62,7 +64,7 @@ class BafangConfig {
             speedmeter_model:       this.speedModels[buf[25] >> 6],
             speedmeter_signals:     buf[25] & 63,
         };
-        for(i=0;i<10;i++) {
+        for(let i=0;i<10;i++) {
             data["assist"+i+"_current"] = buf[4+i];
             data["assist"+i+"_speed"] = buf[14+i];
         }
@@ -73,9 +75,9 @@ class BafangConfig {
             data["low_battery_protect"],
             data["current_limit"],
         ];
-        for(i=0;i<10;i++)
+        for(let i=0;i<10;i++)
             buf.push(data["assist"+i+"_current"]);
-        for(i=0;i<10;i++)
+        for(let i=0;i<10;i++)
             buf.push(data["assist"+i+"_speed"]);
         buf.push(data["wheel_size"] == "700C" ? 0x37 : parseInt(data["wheel_size"])*2);
         let spd_sigs = parseInt(data["speedmeter_signals"]) & 63;
