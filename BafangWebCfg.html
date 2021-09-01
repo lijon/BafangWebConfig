@@ -292,6 +292,7 @@
     };
 
     bafang.parseTable = (name) => {
+      console.log("Parsing table",name);
       let info = {};
       bafang.data[name] = info;
       const nodes = document.querySelectorAll("table#"+name+" .cfg");
@@ -303,6 +304,7 @@
     };
 
     function updateTable(name, info) {
+      console.log("Updating table",name);
       if(!info) info = bafang.data[name];
       const infoTable = document.querySelector("table#"+name);
       for (key in info) {
@@ -337,7 +339,6 @@
       clearErrorHL();
       switch(blk) {
         case BLK_GEN:
-          console.log("CONTROLLER FOUND");
           for (b of [readBasButton, readPasButton, readThrButton]) {
             b.removeAttribute('disabled');
           }
@@ -352,18 +353,21 @@
         case BLK_THR:
           writeThrButton.removeAttribute('disabled');
         break;
-        default: // read file
+      }
+
+      if(blk) {
+        updateTable(blockKeys[blk]);
+      } else { // read file
           if(!readBasButton.disabled) // only if we connected to controller
             for (b of [writeBasButton, writePasButton, writeThrButton]) {
               b.removeAttribute('disabled');
             }
           saveFileButton.removeAttribute('disabled');
+          for (let k in bafang.data) {
+            updateTable(k);
+          }
       }
 
-      updateTable("info");
-      updateTable("basic");
-      updateTable("pedal");
-      updateTable("throttle");
       
       serialMessagesContainer.innerText = JSON.stringify(bafang.data,null,2);
     };

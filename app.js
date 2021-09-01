@@ -1,8 +1,6 @@
 "use strict";
 /*
 TODO:
-
-- read on any section updates all from data, overwriting values
 - reset button for each field, resets to last read value (bafang.data[blk][key])
 - batch read/write, just iterate from BLK_BAS to BLK_THR
 - baud user setting and close button
