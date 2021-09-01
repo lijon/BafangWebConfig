@@ -1,8 +1,11 @@
 "use strict";
 /*
 TODO:
-- reset button for each field, resets to last read value (bafang.data[blk][key])
-- batch read/write, just iterate from BLK_BAS to BLK_THR
+- reset button for each field, resets to last read value (bafang.data[blk][key]),
+could also show original value in tooltip?
+- maybe compare info section read from file and warn if voltage and max current mismatches?
+could also show both read and file values.
+- batch read/write, just start at BLK_BAS, increase at success and do the next until BLK_THR is done.
 - baud user setting and close button
 - handle disconnects etc gracefully
 */

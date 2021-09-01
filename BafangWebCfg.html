@@ -110,7 +110,7 @@
     <tr><th>HW Version</th><td id="hw_ver"></td></tr>
     <tr><th>FW Version</th><td id="fw_ver"></td></tr>
     <tr><th>Voltage</th><td id="voltage"></td></tr>
-    <tr><th>Max Current</th><td id="max_current"></td></tr>
+    <tr><th>Max Current (A)</th><td id="max_current"></td></tr>
     </tbody>
     </table>
   </div>
@@ -367,19 +367,12 @@
             updateTable(k);
           }
       }
-
-      
-      serialMessagesContainer.innerText = JSON.stringify(bafang.data,null,2);
+//      serialMessagesContainer.innerText = JSON.stringify(bafang.data,null,2);
     };
     
     bafang.onSerialConnect = (port) => {
       readGenButton.removeAttribute('disabled');
       //console.log(port); // TODO: would be nice if we could get the port name here!
-      
-      // FOR TESTING:
-//      for (b of [writeBasButton, writePasButton, writeThrButton, readBasButton, readPasButton, readThrButton]) {
- //       b.removeAttribute('disabled');
- //     }
     };
     
     connectButton.addEventListener('click', () => {
