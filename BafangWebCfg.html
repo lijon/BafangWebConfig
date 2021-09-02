@@ -42,10 +42,11 @@
       /*border-bottom: 1px solid black;*/
       background: #777;
       color: white;
-      padding: 10px;
+      padding: 8px;
+      border-radius: 3px;
     }
     button {
-      margin-bottom: 1em;
+      /*margin-bottom: 1em;*/
     }
 
     input.cfg {
@@ -71,13 +72,19 @@
       background: #eee;
       text-align: center;
       margin-bottom: 1em;
+      margin-top: 1em;
+      border-radius: 3px;
     }
     .highlight-error {
       background: yellow;
     }
     #file-pick {
       margin-bottom: 1em;
-      width: 100%;
+      /*width: 100%;*/
+      /*background: #eee;*/
+    }
+    button {
+      /*min-width: 20%;*/
     }
     select.cfg {
       width: 100%;
@@ -86,6 +93,13 @@
       background: transparent;
       border: 0;
     }
+    div#saveload {
+      /*border-top: 2px solid black;*/
+      padding: 15px;
+      border: 1px solid #aaa;
+      margin-top: 15px;
+      border-radius: 3px;
+    }
   </style>
 </head>
 <body>
@@ -93,15 +107,22 @@
   <div>
     <button id="connect-to-serial">Open serial port</button>
   </div>
+  <div id="saveload">
   <div>
-    <button id="save-file" type="button" disabled=1>Save File</button>
-<!--    <label for="file-pick">Open File:</label>-->
+    <label>Load File:
     <input type="file" id="file-pick"/>
-    </div>
-
+  </label>
+  </div>
+    <div>
+    <label>Save File:
+      <button id="save-file" type="button" disabled=1>Download</button>
+    </label>
+  </div>
+  </div>
   <div class="block">
     <h2>Info</h2>
     <button id="read-gen" type="button" disabled=1>Connect controller</button>
+    <button id="read-all" type="button" disabled=1>Read All</button>
     <div class="error-display" id="info"></div>
     <table id="info">
     <tbody>
@@ -224,6 +245,7 @@
     const bafang = new BafangConfig();
     const connectButton = document.getElementById('connect-to-serial');
     const serialMessagesContainer = document.getElementById('serial-messages-container');
+    const readAllButton = document.getElementById('read-all');
     const readGenButton = document.getElementById('read-gen');
     const readBasButton = document.getElementById('read-bas');
     const readPasButton = document.getElementById('read-pas');
@@ -338,8 +360,8 @@
     bafang.onRead = (blk) => {
       clearErrorHL();
       switch(blk) {
-        case BLK_GEN:
-          for (b of [readBasButton, readPasButton, readThrButton]) {
+        case BLK_GEN: // Connected to controller
+          for (b of [readAllButton, readBasButton, readPasButton, readThrButton]) {
             b.removeAttribute('disabled');
           }
           saveFileButton.removeAttribute('disabled');
@@ -383,6 +405,9 @@
       bafang.connectDevice();
     });
 
+    readAllButton.addEventListener('click', () => {
+      bafang.readAll();
+    });
     readBasButton.addEventListener('click', () => {
       bafang.readBlock(BLK_BAS);
     });

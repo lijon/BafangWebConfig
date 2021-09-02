@@ -38,6 +38,7 @@ class BafangConfig {
         this.data = {};
         this.resultBlock = "";
         this.resultKey = "";
+        this.readAll = false;
     }
 
     // callbacks
@@ -288,8 +289,11 @@ class BafangConfig {
         } else if(this.lastCmd == CMD_READ) {
             this.data[key] = this.parseData(buf);
             this.onRead(blk);
-            this.logMsg(blk, "Read successful");
-            
+            this.logMsg(key, "Read successful");
+            if(this.readAll && blk < BLK_THR)
+                this.readBlock(blk+1);
+            if(blk == BLK_THR)
+                this.readAll = false;
             // Verify that our byte generation code works.
             // Note this can fail on wheelsize since two values equals the same size..
             /*let org = buf.slice(2,-1);
@@ -427,9 +431,13 @@ class BafangConfig {
     }
     async readBlock(blk) {
         let data = [CMD_READ, blk];
-        this.logMsg(blk,"Waiting for response...");
+        this.logMsg("Reading block",blockKeys[blk],"Waiting for response...");
         this.expectBytes(blockNumBytes[blk], CMD_READ);
         return this.write(data);
+    }
+    readAll() {
+        this.readAll = true;
+        this.readBlock(BLK_BAS);
     }
     readFile(f) {
         let fr = new FileReader();
