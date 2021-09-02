@@ -289,7 +289,7 @@ class BafangConfig {
         } else if(this.lastCmd == CMD_READ) {
             this.data[key] = this.parseData(buf);
             this.onRead(blk);
-            this.logMsg(key, "Read successful");
+            this.logMsg(blk, "Read successful");
             if(this.readAll && blk < BLK_THR)
                 this.readBlock(blk+1);
             if(blk == BLK_THR)
@@ -364,16 +364,18 @@ class BafangConfig {
         }
     }
     logError(blk, ...msg) {
-        const node = document.querySelector('#'+blockKeys[blk]+'.error-display');
+        const key = blockKeys[blk];
+        const node = document.querySelector('#'+key+'.error-display');
         node.style.color = "red";
         node.innerText = msg.join(' ');
-        console.log("ERROR:",msg.join(' '));
+        console.log(key,"ERROR:",msg.join(' '));
     }
     logMsg(blk, ...msg) {
-        const node = document.querySelector('#'+blockKeys[blk]+'.error-display');
+        const key = blockKeys[blk];
+        const node = document.querySelector('#'+key+'.error-display');
         node.style.color = "green";
         node.innerText = msg.join(' ');
-        console.log("LOG:",msg.join(' '));
+        console.log(key,"LOG:",msg.join(' '));
     }
     async init() {
         if ('serial' in navigator) {
@@ -431,11 +433,11 @@ class BafangConfig {
     }
     async readBlock(blk) {
         let data = [CMD_READ, blk];
-        this.logMsg("Reading block",blockKeys[blk],"Waiting for response...");
+        this.logMsg(blk,"Waiting for response...");
         this.expectBytes(blockNumBytes[blk], CMD_READ);
         return this.write(data);
     }
-    readAll() {
+    readAllBlocks() {
         this.readAll = true;
         this.readBlock(BLK_BAS);
     }
