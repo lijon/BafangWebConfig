@@ -1,9 +1,13 @@
 # BafangWebConfig
-Web based configuration tool for Bafang BBSxx e-bike motors.
+Browser based configuration tool for Bafang BBSxx e-bike motors. It should work on any modern browser with support for Serial Web API.
 
-## Install & Run
+## Run online
 
-Simply download or clone the repository and open BafangWebCfg.html in your browser. It should work on any modern browser with support for Serial Web API.
+[Click here](https://devnotes.kymatica.com/BafangWebConfig/BafangWebCfg.html) to start the tool.
+
+## Install & run locally
+
+Simply download or clone [the repository](https://github.com/lijon/BafangWebConfig) and open BafangWebCfg.html in your browser. 
 
 ## Notes
 
