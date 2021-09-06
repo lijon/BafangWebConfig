@@ -47,13 +47,15 @@ class BafangConfig {
             max_current:    buf[17],
         };
     }
-    speedModels = ["External","Internal","Motorphase"];
+    speedModels = ["External","Internal","Motorphase","Unknown"];
     parseBasData(buf) {
+        let smm = buf[25] >> 6;
+        if(smm==3) smm=2; // According to original code!
         let data = {
             low_battery_protect:    buf[2],
             current_limit:          buf[3],
             wheel_size:             buf[24]==0x37 ? "700C" : (Math.ceil(buf[24]/2) + '"'),
-            speedmeter_model:       this.speedModels[buf[25] >> 6],
+            speedmeter_model:       this.speedModels[smm],
             speedmeter_signals:     buf[25] & 63,
         };
         for(let i=0;i<10;i++) {
@@ -74,6 +76,7 @@ class BafangConfig {
         buf.push(data["wheel_size"] == "700C" ? 0x37 : parseInt(data["wheel_size"])*2);
         let spd_sigs = parseInt(data["speedmeter_signals"]) & 63;
         let spd_model = Math.max(0,this.speedModels.indexOf(data["speedmeter_model"]));
+        if(spd_model == 2) spd_model = 3; // According to original code!
         buf.push(spd_model << 6 | spd_sigs);
         return buf;
     }
@@ -431,11 +434,95 @@ class BafangConfig {
         this.readAll = true;
         this.readBlock(BLK_BAS);
     }
+    parseINIString(data) {
+        const regex = {
+            section: /^\s*\[\s*([^\]]*)\s*\]\s*$/,
+            param: /^\s*([^=]+?)\s*=\s*(.*?)\s*$/,
+            comment: /^\s*;.*$/
+        };
+        var value = {};
+        const lines = data.split(/[\r\n]+/);
+        var section = null;
+        lines.forEach(function(line) {
+            if(regex.comment.test(line)) {
+                return;
+            } else if(regex.param.test(line)) {
+                const match = line.match(regex.param);
+                if(section) {
+                    value[section][match[1]] = parseInt(match[2]);
+                } else {
+                    value[match[1]] = parseInt(match[2]);
+                }
+            } else if(regex.section.test(line)) {
+                const match = line.match(regex.section);
+                value[match[1]] = {};
+                section = match[1];
+            } else if(line.length == 0 && section) {
+                section = null;
+            };
+        });
+        return value;
+    }
+    convertIni(txt) {
+        const ini = this.parseINIString(txt);
+        const bas = ini["Basic"];
+        const pas = ini["Pedal Assist"];
+        const thr = ini["Throttle Handle"];
+        let data = {
+            "basic": {
+                low_battery_protect: bas["LBP"],
+                current_limit: bas["LC"],
+                speedmeter_model: this.speedModels[bas["SMM"]],
+                speedmeter_signals: bas["SMS"],
+            },
+            "pedal": {
+                pedal_type: this.pedalTypes[pas["PT"]],
+                designated_assist: pas["DA"]==0?"Display":(pas["DA"]-1),
+                speed_limit: pas["SL"]==0?"Display":(pas["SL"]+14),
+                start_current: pas["SC"],
+                slow_start_mode: pas["SSM"]+1,
+                startup_degree: pas["SDN"],
+                work_mode: pas["WM"]==0?"Undetermined":(pas["WM"]+9),
+                time_of_stop: pas["TS"],
+                current_decay: pas["CD"],
+                stop_decay: pas["SD"],
+                keep_current: pas["KC"],
+            },
+            "throttle": {
+                start_voltage: thr["SV"],
+                end_voltage: thr["EV"],
+                mode: ["Speed","Current"][thr["MODE"]],
+                designated_assist: thr["DA"]==0?"Display":(thr["DA"]-1),
+                speed_limit: thr["SL"]==0?"Display":(thr["SL"]+14),
+                start_current: thr["SC"],
+            }
+        };
+        for(let i=0;i<10;i++) {
+            data["basic"]["assist"+i+"_current"] = bas["ALC"+i];
+            data["basic"]["assist"+i+"_speed"] = bas["ALBP"+i];
+        }
+        let whl = bas["WD"];
+        if(whl==12) {
+            whl = "700C";
+        } else if(whl>12) {
+            whl = (whl+15)+'"';
+        } else {
+            whl = (whl+16)+'"';
+        }
+        data["basic"]["wheel_size"] = whl;
+        return data;
+    }
     readFile(f) {
         let fr = new FileReader();
+        let ext = f.name.split('.').pop().toUpperCase();
         fr.onload = (e) => {
             let oldInfo = this.data["info"];
-            this.data = JSON.parse(e.target.result);
+            let txt = e.target.result;
+            if(ext == "EL") {
+                this.data = this.convertIni(txt);
+            } else {
+                this.data = JSON.parse(txt);
+            }
             if(oldInfo) this.data["info"] = oldInfo;
             // convert number strings to numbers
             for (let blk in this.data) {
