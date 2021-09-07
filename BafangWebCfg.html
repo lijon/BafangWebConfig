@@ -100,12 +100,23 @@
       margin-top: 15px;
       border-radius: 3px;
     }
+    #port-status {
+      border-radius: 5px;
+      color: white;
+      font-size: 80%;
+      background: #777;
+      padding: 3px;
+      padding-left: 8px;
+      padding-right: 8px;
+      margin-left: 1ex;
+    }
   </style>
 </head>
 <body>
   <h1>Bafang BBSxx Configuration</h1>
   <div>
     <button id="connect-to-serial">Open serial port</button>
+    <span id="port-status"></span>
   </div>
   <div id="saveload">
   <div>
@@ -278,6 +289,7 @@
           e.setAttribute("max",100);
           e.classList.add("cfg");
         }
+        bafang.onSerialConnect(false);
       }
 
       const a = document.querySelectorAll("select#designated_assist");
@@ -392,9 +404,17 @@
 //      serialMessagesContainer.innerText = JSON.stringify(bafang.data,null,2);
     };
     
-    bafang.onSerialConnect = (port) => {
-      readGenButton.removeAttribute('disabled');
-      //console.log(port); // TODO: would be nice if we could get the port name here!
+    bafang.onSerialConnect = (state) => {
+      let st = document.querySelector("#port-status");
+      if(state) {
+        readGenButton.removeAttribute('disabled');
+        st.innerText = "Connected";
+        st.style.background = "#20bf20";
+      } else {
+        readGenButton.setAttribute('disabled',1);
+        st.innerText = "Not Connected";
+        st.style.background = "#f55";
+      }
     };
     
     connectButton.addEventListener('click', () => {
@@ -441,11 +461,11 @@
       console.log("Connected "+event.target);
     });
 
-    navigator.serial.addEventListener("disconnect", (event) => {
-      // TODO: Remove |event.target| from the UI.
-      // If the serial port was opened, a stream error would be observed as well.
-      console.log("Disconnected "+event.target);
-    });
+    // navigator.serial.addEventListener("disconnect", (event) => {
+    //   // TODO: Remove |event.target| from the UI.
+    //   // If the serial port was opened, a stream error would be observed as well.
+    //   console.log("Disconnected "+event.target);
+    // });
 
   </script>
 

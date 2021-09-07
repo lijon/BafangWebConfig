@@ -310,49 +310,59 @@ class BafangConfig {
         }
     }
     async listen() {
-        const reader = this.reader;
+        while (this.port.readable) {
+            const reader = this.port.readable.getReader();
 
-        while (true) {
-            const { value, done } = await reader.read();
-            if (done) {
-                reader.releaseLock();
-                console.log("DONE");
-                break;
-            }
-            console.log("read "+value);
+            try {
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) {
+                        reader.releaseLock();
+                        console.log("DONE");
+                        break;
+                    }
+                    console.log("read "+value);
 
-            /*
-            // DUMMY TEST WITH LOOP BACK DEVICE
-            if(this.byteCount > 0 && this.buffer) {
-                this.byteCount = 0;
-                // GEN
-                //this.buffer = [0x51,0x10,0x48,0x5A,0x58,0x54,0x53,0x5A,0x5A,0x36,0x32,0x32,0x32,0x30,0x31,0x31,0x01,0x14,0x1B];
-                // BAS
-                if(this.lastCmd == CMD_READ)
-                    this.buffer = [0x52, 0x18, 0x1F, 0x0F, 0x00, 0x1C, 0x25, 0x2E, 0x37, 0x40, 0x49, 0x52, 0x5B, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x35, 0x42, 0xDF];
-                else
-                    this.buffer = [0x52, 50];
-                // PAS
-                // this.buffer = [0x53, 0x0B, 0x03, 0xFF, 0xFF, 0x64, 0x06, 0x14, 0x0A, 0x19, 0x08, 0x14, 0x14, 0x27];
-                // THR
-                // this.buffer = [0x54, 0x06, 0x0B, 0x23, 0x00, 0x03, 0x11, 0x14, 0xAC];
-                
-                this.processResponse(this.buffer);
-            }
-            */
-            
-            for (const a of value) {    
-                if(this.byteCount > 0 && this.buffer) {
-                    this.byteCount--;
-                    console.log("pushing 0x"+a.toString(16)+", "+this.byteCount+" bytes left");
-                    this.buffer.push(a);
-                    if(this.byteCount == 0) {
-                        console.log("Got all "+this.buffer.length+" bytes");
+                    /*
+                    // DUMMY TEST WITH LOOP BACK DEVICE
+                    if(this.byteCount > 0 && this.buffer) {
+                        this.byteCount = 0;
+                        // GEN
+                        //this.buffer = [0x51,0x10,0x48,0x5A,0x58,0x54,0x53,0x5A,0x5A,0x36,0x32,0x32,0x32,0x30,0x31,0x31,0x01,0x14,0x1B];
+                        // BAS
+                        if(this.lastCmd == CMD_READ)
+                            this.buffer = [0x52, 0x18, 0x1F, 0x0F, 0x00, 0x1C, 0x25, 0x2E, 0x37, 0x40, 0x49, 0x52, 0x5B, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x64, 0x35, 0x42, 0xDF];
+                        else
+                            this.buffer = [0x52, 50];
+                        // PAS
+                        // this.buffer = [0x53, 0x0B, 0x03, 0xFF, 0xFF, 0x64, 0x06, 0x14, 0x0A, 0x19, 0x08, 0x14, 0x14, 0x27];
+                        // THR
+                        // this.buffer = [0x54, 0x06, 0x0B, 0x23, 0x00, 0x03, 0x11, 0x14, 0xAC];
+                        
                         this.processResponse(this.buffer);
                     }
-                } else {
-                    console.log("ignoring byte: 0x"+a.toString(16));
+                    */
+                    
+                    for (const a of value) {    
+                        if(this.byteCount > 0 && this.buffer) {
+                            this.byteCount--;
+                            console.log("pushing 0x"+a.toString(16)+", "+this.byteCount+" bytes left");
+                            this.buffer.push(a);
+                            if(this.byteCount == 0) {
+                                console.log("Got all "+this.buffer.length+" bytes");
+                                this.processResponse(this.buffer);
+                            }
+                        } else {
+                            console.log("ignoring byte: 0x"+a.toString(16));
+                        }
+                    }
                 }
+            } catch (error) {
+                console.log(error);
+                reader.releaseLock();
+                this.writer.releaseLock();
+                this.port.close();
+                this.onSerialConnect(false);
             }
         }
     }
@@ -373,15 +383,15 @@ class BafangConfig {
     async init() {
         if ('serial' in navigator) {
             try {
-                const port = await navigator.serial.requestPort();
-                console.log(port);
-                await port.open({ baudRate: BAUD_RATE });
-                this.reader = port.readable.getReader();
-                this.writer = port.writable.getWriter();
+                this.port = await navigator.serial.requestPort();
+                console.log(this.port);
+                await this.port.open({ baudRate: BAUD_RATE });
+                // this.reader = port.readable.getReader();
+                this.writer = this.port.writable.getWriter();
                 /*let signals = await port.getSignals();*/
 
                 this.listen();
-                this.onSerialConnect(port);
+                this.onSerialConnect(true);
             }
             catch (err) {
                 console.log(err);
