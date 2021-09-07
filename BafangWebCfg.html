@@ -147,6 +147,7 @@
     <h2>Info</h2>
     <button id="read-gen" type="button" disabled=1>Connect controller</button>
     <button id="read-all" type="button" disabled=1>Read All</button>
+    <button id="write-all" type="button" disabled=1>Write All</button>
     <div class="error-display" id="info"></div>
     <table id="info">
     <tbody>
@@ -270,6 +271,7 @@
     const connectButton = document.getElementById('connect-to-serial');
     const serialMessagesContainer = document.getElementById('serial-messages-container');
     const readAllButton = document.getElementById('read-all');
+    const writeAllButton = document.getElementById('write-all');
     const readGenButton = document.getElementById('read-gen');
     const readBasButton = document.getElementById('read-bas');
     const readPasButton = document.getElementById('read-pas');
@@ -319,7 +321,7 @@
             b.innerHTML = "&#x21bb;"
             cell.appendChild(b);
             let configs = r.querySelectorAll(".cfg");
-            // b.setAttribute("title","Test"); // could update tooltip with old value in onRead()
+            b.setAttribute("title","Reset to last read value"); // TODO: could update tooltip with old value in onRead()
             b.addEventListener('click', () => {
               for (let e of configs) {
                 if(bafang.data[s])
@@ -431,11 +433,15 @@
         break;
       }
 
+      if(![writeBasButton,writePasButton,writeThrButton].reduce((a,b)=>{return a.disabled||b.disabled})) {
+        writeAllButton.removeAttribute('disabled');
+      }
+
       if(blk) {
         updateTable(blockKeys[blk]);
       } else { // read file
           if(!readBasButton.disabled) // only if we connected to controller
-            for (b of [writeBasButton, writePasButton, writeThrButton]) {
+            for (b of [writeAllButton, writeBasButton, writePasButton, writeThrButton]) {
               b.removeAttribute('disabled');
             }
           saveFileButton.removeAttribute('disabled');
@@ -470,6 +476,10 @@
     readAllButton.addEventListener('click', () => {
       bafang.readAllBlocks();
     });
+    writeAllButton.addEventListener('click', () => {
+      bafang.writeAllBlocks();
+    });
+
     readBasButton.addEventListener('click', () => {
       bafang.readBlock(BLK_BAS);
     });

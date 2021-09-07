@@ -28,7 +28,7 @@ class BafangConfig {
         this.data = {};
         this.resultBlock = "";
         this.resultKey = "";
-        this.readAll = false;
+        this.readWriteAll = false;
     }
 
     // callbacks
@@ -274,6 +274,11 @@ class BafangConfig {
         this.expectBytes(2, CMD_WRITE);
         return this.write(data);
     }
+    writeAllBlocks() {
+        this.readWriteAll = true;
+        this.writeBlock(BLK_BAS);
+    }
+
     processResponse(buf) {
         const blk = buf[0];
         const key = blockKeys[blk];
@@ -283,10 +288,10 @@ class BafangConfig {
             this.data[key] = this.parseData(buf);
             this.onRead(blk);
             this.logMsg(blk, "Read successful");
-            if(this.readAll && blk < BLK_THR)
+            if(this.readWriteAll && blk < BLK_THR)
                 this.readBlock(blk+1);
             if(blk == BLK_THR)
-                this.readAll = false;
+                this.readWriteAll = false;
             // Verify that our byte generation code works.
             // Note this can fail on wheelsize since two values equals the same size..
             /*let org = buf.slice(2,-1);
@@ -303,6 +308,10 @@ class BafangConfig {
             if(!res) {
                 this.logMsg(blk, "Write successful");
                 this.onWrite(blk, null);
+                if(this.readWriteAll && blk < BLK_THR)
+                    this.writeBlock(blk+1);
+                if(blk == BLK_THR)
+                    this.readWriteAll = false;
             } else {
                 this.logError(blk, res[0]);
                 this.onWrite(blk, res[1]);
@@ -441,7 +450,7 @@ class BafangConfig {
         return this.write(data);
     }
     readAllBlocks() {
-        this.readAll = true;
+        this.readWriteAll = true;
         this.readBlock(BLK_BAS);
     }
     parseINIString(data) {
