@@ -110,6 +110,19 @@
       padding-right: 8px;
       margin-left: 1ex;
     }
+    .reload-cell {
+      min-width: 0;
+      padding: 0;
+      text-align: right;
+    }
+    .reload-cell button {
+      margin: 0;
+      /*margin-left: 8px;*/
+      font-size: 12pt;
+      min-width: 2em;
+      padding: 0;
+      /*border: 1px solid #bbb;*/
+    }
   </style>
 </head>
 <body>
@@ -268,7 +281,7 @@
     const saveFileButton = document.getElementById('save-file');
 
     window.onload = () => {
-      const t = document.querySelector("table#basic");
+      let t = document.querySelector("table#basic");
       
       for(let i=0;i<10;i++) {
         let row = t.insertRow();
@@ -290,6 +303,31 @@
           e.classList.add("cfg");
         }
         bafang.onSerialConnect(false);
+      }
+
+      const sections = ["basic","pedal","throttle"];
+      for (let s of sections) {
+        let t = document.querySelector("table#"+s);
+        for (let r of t.rows) {
+          let last = r.cells[r.cells.length-1];
+          if(last.tagName == "TD") {
+            let cell = r.insertCell();
+            cell.style.border = 0;
+            cell.style.background = 0;
+            cell.classList.add("reload-cell");
+            let b = document.createElement("button");
+            b.innerHTML = "&#x21bb;"
+            cell.appendChild(b);
+            let configs = r.querySelectorAll(".cfg");
+            // b.setAttribute("title","Test"); // could update tooltip with old value in onRead()
+            b.addEventListener('click', () => {
+              for (let e of configs) {
+                if(bafang.data[s])
+                  updateCfgField(e, bafang.data[s][e.id]);
+              }
+            });
+          }
+        }
       }
 
       const a = document.querySelectorAll("select#designated_assist");
@@ -337,18 +375,22 @@
       }
     };
 
+    function updateCfgField(e,val) {
+      if(e) {
+        if(e.tagName == "TD")
+          e.innerText = val;
+        else
+          e.value = val;
+      }      
+    }
+
     function updateTable(name, info) {
       console.log("Updating table",name);
       if(!info) info = bafang.data[name];
       const infoTable = document.querySelector("table#"+name);
       for (key in info) {
-          const e = infoTable.querySelector("#"+key);
-          if(e) {
-            if(e.tagName == "TD")
-              e.innerText = info[key];
-            else
-              e.value = info[key];
-          }
+        const e = infoTable.querySelector("#"+key);
+        updateCfgField(e,info[key]);
       }
     }
 
