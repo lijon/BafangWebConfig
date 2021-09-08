@@ -268,13 +268,15 @@ class BafangConfig {
         return buf.map((e)=>{return parseInt(e)});
     }
     async writeBlock(blk) {
-        this.parseTable(blockKeys[blk]);
+        this.logMsg(blk,"Writing...");
+        this.parseTable(blk);
         let data = this.bytesForBlock(blk);
         data = this.prepareWriteData(blk, data);
         this.expectBytes(2, CMD_WRITE);
         return this.write(data);
     }
     writeAllBlocks() {
+        this.clearMessages();
         this.readWriteAll = true;
         this.writeBlock(BLK_BAS);
     }
@@ -445,11 +447,17 @@ class BafangConfig {
     }
     async readBlock(blk) {
         let data = [CMD_READ, blk];
-        this.logMsg(blk,"Waiting for response...");
+        this.logMsg(blk,"Reading...");
         this.expectBytes(blockNumBytes[blk], CMD_READ);
         return this.write(data);
     }
+    clearMessages() {
+        let nodes = document.querySelectorAll('.error-display');
+        for(let e of nodes)
+            e.innerText = "";
+    }
     readAllBlocks() {
+        this.clearMessages();
         this.readWriteAll = true;
         this.readBlock(BLK_BAS);
     }
@@ -532,6 +540,7 @@ class BafangConfig {
         return data;
     }
     readFile(f) {
+        this.clearMessages();
         let fr = new FileReader();
         let ext = f.name.split('.').pop().toUpperCase();
         fr.onload = (e) => {
@@ -567,7 +576,7 @@ class BafangConfig {
     }
     saveFile() {
         for (let blk of [BLK_BAS, BLK_PAS, BLK_THR])
-            this.parseTable(blockKeys[blk]);
+            this.parseTable(blk);
         //console.log(JSON.stringify(this.data, null, 2));
         const a = document.createElement("a");
         a.href = URL.createObjectURL(new Blob([JSON.stringify(this.data, null, 2)], {

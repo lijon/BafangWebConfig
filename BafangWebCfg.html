@@ -75,9 +75,6 @@
       margin-top: 1em;
       border-radius: 3px;
     }
-    .highlight-error {
-      background: yellow;
-    }
     #file-pick {
       margin-bottom: 1em;
       /*width: 100%;*/
@@ -122,6 +119,9 @@
       min-width: 2em;
       padding: 0;
       /*border: 1px solid #bbb;*/
+    }
+    .highlight-error {
+      background: yellow !important;
     }
   </style>
 </head>
@@ -365,16 +365,33 @@
 
     };
 
-    bafang.parseTable = (name) => {
+    bafang.parseTable = (blk) => {
+      const name = blockKeys[blk];
       console.log("Parsing table",name);
       let info = {};
       bafang.data[name] = info;
+      clearErrorHL();
       const nodes = document.querySelectorAll("table#"+name+" .cfg");
-      for (e of nodes) {
+      for (let e of nodes) {
         const val = e.tagName == "TD" ? e.innerText : e.value;
+        if(!val) {
+          bafang.logError(blk,"Missing value");
+          errorHL(blk,e.id);
+          return;
+        }
         const num = parseInt(val);
-        info[e.id] = num==val ? num : val;
+        if(num==val) {
+          if(num > 255) {
+            bafang.logError(blk,"Value out range");
+            errorHL(blk,e.id);
+            return;
+          }
+          info[e.id] = num;
+        } else {
+          info[e.id] = val;
+        }
       }
+      bafang.logMsg(blk,"");
     };
 
     function updateCfgField(e,val) {
@@ -402,14 +419,19 @@
         e.classList.remove("highlight-error");
     }
 
+    function errorHL(blk, key) {
+        blk = blockKeys[blk];
+        console.log("Error at",blk,key);
+        let e = document.querySelector("table#"+blk+" #"+key);
+        while (e.tagName != "TD") e = e.parentNode;
+        e.classList.add("highlight-error");
+    }
+
     bafang.onWrite = (blk, key) => {
       clearErrorHL();
       if(!!key) {
         // window.scrollTo({top:0, behaviour: 'smooth'});
-        blk = blockKeys[blk];
-        console.log("Error at",blk,key);
-        let e = document.querySelector("table#"+blk+" #"+key);
-        e.classList.add("highlight-error");
+        errorHL(blk, key);
       }
     };
 
