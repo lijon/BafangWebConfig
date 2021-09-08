@@ -381,7 +381,7 @@
         }
         const num = parseInt(val);
         if(num==val) {
-          if(num > 255) {
+          if(num > 255 || num < 0) {
             bafang.logError(blk,"Value out range");
             errorHL(blk,e.id);
             return;
