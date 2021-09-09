@@ -1,5 +1,5 @@
 # BafangWebConfig
-Cross-platform browser based configuration tool for Bafang BBSxx e-bike motors. It should work on any modern browser with support for Serial Web API, on Mac, Linux or Windows.
+Cross-platform browser based configuration tool for Bafang BBSxx e-bike motors, runs on Mac, Linux or Windows. It requires a browser with support for Web Serial API, and should work on any recent version of Chrome, Opera or Edge.
 
 ## Run online
 

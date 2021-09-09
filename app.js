@@ -382,7 +382,7 @@ class BafangConfig {
         const node = document.querySelector('#'+key+'.error-display');
         node.style.color = "red";
         node.innerText = msg.join(' ');
-        console.log(key,"ERROR:",msg.join(' '));
+        console.error(key,"ERROR:",msg.join(' '));
     }
     logMsg(blk, ...msg) {
         const key = blockKeys[blk];
@@ -411,10 +411,7 @@ class BafangConfig {
             }
         }
         else {
-            console.error('Web serial doesn\'t seem to be enabled in your browser. Try enabling it by visiting:');
-            console.error('chrome://flags/#enable-experimental-web-platform-features');
-            console.error('opera://flags/#enable-experimental-web-platform-features');
-            console.error('edge://flags/#enable-experimental-web-platform-features');
+            this.logError(BLK_GEN, "Web Serial disabled or not supported by your browser.\nTry a recent version of Chrome, Opera or Edge.")
         }
     }
     async write(data) {
