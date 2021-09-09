@@ -145,7 +145,7 @@
   </div>
   <div class="block">
     <h2>Info</h2>
-    <button id="read-gen" type="button" disabled=1>Connect controller</button>
+    <!--<button id="read-gen" type="button" disabled=1>Connect controller</button>-->
     <button id="read-all" type="button" disabled=1>Read All</button>
     <button id="write-all" type="button" disabled=1>Write All</button>
     <div class="error-display" id="info"></div>
@@ -272,7 +272,7 @@
     const serialMessagesContainer = document.getElementById('serial-messages-container');
     const readAllButton = document.getElementById('read-all');
     const writeAllButton = document.getElementById('write-all');
-    const readGenButton = document.getElementById('read-gen');
+    // const readGenButton = document.getElementById('read-gen');
     const readBasButton = document.getElementById('read-bas');
     const readPasButton = document.getElementById('read-pas');
     const readThrButton = document.getElementById('read-thr');
@@ -477,11 +477,11 @@
     bafang.onSerialConnect = (state) => {
       let st = document.querySelector("#port-status");
       if(state) {
-        readGenButton.removeAttribute('disabled');
+        // readGenButton.removeAttribute('disabled');
         st.innerText = "Connected";
         st.style.background = "#20bf20";
       } else {
-        readGenButton.setAttribute('disabled',1);
+        // readGenButton.setAttribute('disabled',1);
         st.innerText = "Not Connected";
         st.style.background = "#f55";
       }
@@ -491,9 +491,9 @@
       bafang.init();
     });
 
-    readGenButton.addEventListener('click', () => {
-      bafang.connectDevice();
-    });
+    // readGenButton.addEventListener('click', () => {
+    //   bafang.connectDevice();
+    // });
 
     readAllButton.addEventListener('click', () => {
       bafang.readAllBlocks();

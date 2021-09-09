@@ -403,6 +403,7 @@ class BafangConfig {
 
                 this.listen();
                 this.onSerialConnect(true);
+                this.connectDevice();
             }
             catch (err) {
                 console.log(err);
