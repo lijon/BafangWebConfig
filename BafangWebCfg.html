@@ -129,6 +129,7 @@
   <h1>Bafang BBSxx Configuration</h1>
   <div>
     <button id="connect-to-serial">Open serial port</button>
+    <button id="disconnect-serial">Close serial port</button>
     <span id="port-status"></span>
   </div>
   <div id="saveload">
@@ -146,8 +147,8 @@
   <div class="block">
     <h2>Info</h2>
     <!--<button id="read-gen" type="button" disabled=1>Connect controller</button>-->
-    <button id="read-all" type="button" disabled=1>Read All</button>
-    <button id="write-all" type="button" disabled=1>Write All</button>
+    <button id="read-all" class="read" type="button" disabled=1>Read All</button>
+    <button id="write-all" class="write" type="button" disabled=1>Write All</button>
     <div class="error-display" id="info"></div>
     <table id="info">
     <tbody>
@@ -163,8 +164,8 @@
 
   <div class="block">
     <h2>Basic</h2>
-    <button id="read-bas" type="button" disabled=1>Read</button>
-    <button id="write-bas" type="button" disabled=1>Write</button>
+    <button id="read-bas" class="read" type="button" disabled=1>Read</button>
+    <button id="write-bas" class="write" type="button" disabled=1>Write</button>
     <div class="error-display" id="basic"></div>
     <table id="basic">
     <tbody>
@@ -204,8 +205,8 @@
 
   <div class="block">
     <h2>Pedal Assist</h2>
-    <button id="read-pas" type="button" disabled=1>Read</button>
-    <button id="write-pas" type="button" disabled=1>Write</button>
+    <button id="read-pas" class="read" type="button" disabled=1>Read</button>
+    <button id="write-pas" class="write" type="button" disabled=1>Write</button>
     <div class="error-display" id="pedal"></div>
     <table id="pedal">
     <tbody>
@@ -237,8 +238,8 @@
   
   <div class="block">
     <h2>Throttle</h2>
-    <button id="read-thr" type="button" disabled=1>Read</button>
-    <button id="write-thr" type="button" disabled=1>Write</button>
+    <button id="read-thr" class="read" type="button" disabled=1>Read</button>
+    <button id="write-thr" class="write" type="button" disabled=1>Write</button>
     <div class="error-display" id="throttle"></div>
     <table id="throttle">
     <tbody>
@@ -269,6 +270,7 @@
 
     const bafang = new BafangConfig();
     const connectButton = document.getElementById('connect-to-serial');
+    const disconnectButton = document.getElementById('disconnect-serial');
     const serialMessagesContainer = document.getElementById('serial-messages-container');
     const readAllButton = document.getElementById('read-all');
     const writeAllButton = document.getElementById('write-all');
@@ -377,14 +379,14 @@
         if(!val) {
           bafang.logError(blk,"Missing value");
           errorHL(blk,e.id);
-          return;
+          return false;
         }
         const num = parseInt(val);
         if(num==val) {
           if(num > 255 || num < 0) {
             bafang.logError(blk,"Value out range");
             errorHL(blk,e.id);
-            return;
+            return false;
           }
           info[e.id] = num;
         } else {
@@ -392,6 +394,7 @@
         }
       }
       bafang.logMsg(blk,"");
+      return true;
     };
 
     function updateCfgField(e,val) {
@@ -439,7 +442,7 @@
       clearErrorHL();
       switch(blk) {
         case BLK_GEN: // Connected to controller
-          for (b of [readAllButton, readBasButton, readPasButton, readThrButton]) {
+          for (let b of document.querySelectorAll("button.read")) {
             b.removeAttribute('disabled');
           }
           saveFileButton.removeAttribute('disabled');
@@ -463,7 +466,7 @@
         updateTable(blockKeys[blk]);
       } else { // read file
           if(!readBasButton.disabled) // only if we connected to controller
-            for (b of [writeAllButton, writeBasButton, writePasButton, writeThrButton]) {
+            for (let b of document.querySelectorAll("button.write")) {
               b.removeAttribute('disabled');
             }
           saveFileButton.removeAttribute('disabled');
@@ -480,15 +483,26 @@
         // readGenButton.removeAttribute('disabled');
         st.innerText = "Connected";
         st.style.background = "#20bf20";
+        connectButton.setAttribute('disabled',1);
+        disconnectButton.removeAttribute('disabled');
       } else {
         // readGenButton.setAttribute('disabled',1);
         st.innerText = "Not Connected";
         st.style.background = "#f55";
+        disconnectButton.setAttribute('disabled',1);
+        connectButton.removeAttribute('disabled');
+        let nodes = document.querySelectorAll("button.read, button.write");
+        for(let e of nodes) {
+          e.setAttribute('disabled',1);
+        }
       }
     };
     
     connectButton.addEventListener('click', () => {
       bafang.init();
+    });
+    disconnectButton.addEventListener('click', () => {
+      bafang.close();
     });
 
     // readGenButton.addEventListener('click', () => {

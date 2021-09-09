@@ -269,11 +269,12 @@ class BafangConfig {
     }
     async writeBlock(blk) {
         this.logMsg(blk,"Writing...");
-        this.parseTable(blk);
-        let data = this.bytesForBlock(blk);
-        data = this.prepareWriteData(blk, data);
-        this.expectBytes(2, CMD_WRITE);
-        return this.write(data);
+        if(this.parseTable(blk)) {
+            let data = this.bytesForBlock(blk);
+            data = this.prepareWriteData(blk, data);
+            this.expectBytes(2, CMD_WRITE);
+            return this.write(data);
+        }
     }
     writeAllBlocks() {
         this.clearMessages();
@@ -323,14 +324,14 @@ class BafangConfig {
     async listen() {
         while (this.port.readable) {
             const reader = this.port.readable.getReader();
-
+            this.reader = reader;
             try {
                 while (true) {
                     const { value, done } = await reader.read();
                     if (done) {
                         reader.releaseLock();
                         console.log("DONE");
-                        break;
+                        return;
                     }
                     console.log("read "+value);
 
@@ -391,6 +392,12 @@ class BafangConfig {
         node.innerText = msg.join(' ');
         console.log(key,"LOG:",msg.join(' '));
     }
+    async close() {
+        await this.reader.cancel();
+        await this.writer.releaseLock();
+        await this.port.close();
+        this.onSerialConnect(false);
+    }
     async init() {
         if ('serial' in navigator) {
             try {
@@ -430,7 +437,7 @@ class BafangConfig {
     expectBytes(len, cmd) {
         console.log("expecting "+len+" bytes...");
         if(this.byteCount > 0)
-            this.logError("Warning: Previous read not finished");
+            console.warn("Previous read not finished");
         this.lastCmd = cmd;
         this.byteCount = len;
         this.buffer = new Array();
