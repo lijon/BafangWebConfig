@@ -11,11 +11,13 @@
       margin-left: auto;
       margin-right: auto;
       font-size: 11pt;
+      padding: 1em;
     }
     table {
       border: 0; /*1px solid gray;*/
       border-collapse: collapse;
       width: 100%;
+      margin-top: 1em;
     }
     td, th {
       border: 0;
@@ -36,14 +38,16 @@
       margin-top: 1em;
     }
     h1 {
-      border-bottom: 2px solid black;
-    }
-    h2 {
-      /*border-bottom: 1px solid black;*/
+      /*border-bottom: 2px solid black;*/
       background: #777;
       color: white;
       padding: 8px;
       border-radius: 3px;
+    }
+    h2 {
+      border-bottom: 2px solid black;
+      clear: both;
+      margin-top: 2em;
     }
     button {
       /*margin-bottom: 1em;*/
@@ -67,13 +71,16 @@
       color: #555;
     }
     .error-display {
-      min-height: 1em;
+      /*display: inline-block;*/
+      float: right;
+    /*  min-height: 1em;
+    
       padding: 5px;
       background: #eee;
       text-align: center;
       margin-bottom: 1em;
       margin-top: 1em;
-      border-radius: 3px;
+      border-radius: 3px;*/
     }
     #file-pick {
       margin-bottom: 1em;
@@ -106,6 +113,7 @@
       padding-left: 8px;
       padding-right: 8px;
       margin-left: 1ex;
+      float: right;
     }
     .reload-cell {
       min-width: 0;
@@ -122,6 +130,9 @@
     }
     .highlight-error {
       background: yellow !important;
+    }
+    .read-write {
+      /*float: left;*/
     }
   </style>
 </head>
@@ -140,16 +151,18 @@
   </div>
     <div>
     <label>Save File:
-      <button id="save-file" type="button" disabled=1>Download</button>
+      <button id="save-file" type="button">Download</button>
     </label>
   </div>
   </div>
   <div class="block">
-    <h2>Info</h2>
-    <!--<button id="read-gen" type="button" disabled=1>Connect controller</button>-->
+    <span class="error-display" id="info"></span>
+    <div class="read-write">
     <button id="read-all" class="read" type="button" disabled=1>Read All</button>
     <button id="write-all" class="write" type="button" disabled=1>Write All</button>
-    <div class="error-display" id="info"></div>
+    </div>
+    <h2>Info</h2>
+    <!--<button id="read-gen" type="button" disabled=1>Connect controller</button>-->
     <table id="info">
     <tbody>
     <tr><th>Manufacturer</th> <td id="manufacturer"></td></tr>
@@ -164,9 +177,12 @@
 
   <div class="block">
     <h2>Basic</h2>
+    <span class="error-display" id="basic"></span>
+    <div class="read-write">
     <button id="read-bas" class="read" type="button" disabled=1>Read</button>
     <button id="write-bas" class="write" type="button" disabled=1>Write</button>
-    <div class="error-display" id="basic"></div>
+  </div>
+
     <table id="basic">
     <tbody>
       <!--<tr><th colspan="2">Low Battery Protect (V)</th><td contenteditable='true' id="low_battery_protect" class="cfg"></td></tr>-->
@@ -205,9 +221,11 @@
 
   <div class="block">
     <h2>Pedal Assist</h2>
+    <span class="error-display" id="pedal"></span>
+    <div class="read-write">
     <button id="read-pas" class="read" type="button" disabled=1>Read</button>
     <button id="write-pas" class="write" type="button" disabled=1>Write</button>
-    <div class="error-display" id="pedal"></div>
+  </div>
     <table id="pedal">
     <tbody>
       <tr><th>Pedal Type</th> <td><select id="pedal_type" class="cfg">
@@ -238,9 +256,11 @@
   
   <div class="block">
     <h2>Throttle</h2>
+    <span class="error-display" id="throttle"></span>
+    <div class="read-write">
     <button id="read-thr" class="read" type="button" disabled=1>Read</button>
     <button id="write-thr" class="write" type="button" disabled=1>Write</button>
-    <div class="error-display" id="throttle"></div>
+  </div>
     <table id="throttle">
     <tbody>
       <tr><th>Start Voltage (x 100 mV)</th> <td><input type="number" id="start_voltage" class="cfg"/></td></tr>
@@ -440,41 +460,14 @@
 
     bafang.onRead = (blk) => {
       clearErrorHL();
-      switch(blk) {
-        case BLK_GEN: // Connected to controller
-          for (let b of document.querySelectorAll("button.read")) {
+      if (blk == BLK_GEN) { // Connected to controller
+          for (let b of document.querySelectorAll("button.read, button.write")) {
             b.removeAttribute('disabled');
           }
-          saveFileButton.removeAttribute('disabled');
-        break;
-        case BLK_BAS:
-          writeBasButton.removeAttribute('disabled');
-        break;
-        case BLK_PAS:
-          writePasButton.removeAttribute('disabled');
-        break;
-        case BLK_THR:
-          writeThrButton.removeAttribute('disabled');
-        break;
       }
-
-      if(![writeBasButton,writePasButton,writeThrButton].reduce((a,b)=>{return a.disabled||b.disabled})) {
-        writeAllButton.removeAttribute('disabled');
-      }
-
       if(blk) {
         updateTable(blockKeys[blk]);
-      } else { // read file
-          if(!readBasButton.disabled) // only if we connected to controller
-            for (let b of document.querySelectorAll("button.write")) {
-              b.removeAttribute('disabled');
-            }
-          saveFileButton.removeAttribute('disabled');
-          for (let k in bafang.data) {
-            updateTable(k);
-          }
       }
-//      serialMessagesContainer.innerText = JSON.stringify(bafang.data,null,2);
     };
     
     bafang.onSerialConnect = (state) => {
@@ -491,8 +484,7 @@
         st.style.background = "#f55";
         disconnectButton.setAttribute('disabled',1);
         connectButton.removeAttribute('disabled');
-        let nodes = document.querySelectorAll("button.read, button.write");
-        for(let e of nodes) {
+        for(let e of document.querySelectorAll("button.read, button.write")) {
           e.setAttribute('disabled',1);
         }
       }

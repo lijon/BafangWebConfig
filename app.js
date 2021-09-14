@@ -268,8 +268,8 @@ class BafangConfig {
         return buf.map((e)=>{return parseInt(e)});
     }
     async writeBlock(blk) {
-        this.logMsg(blk,"Writing...");
         if(this.parseTable(blk)) {
+            this.logMsg(blk,"Writing...");
             let data = this.bytesForBlock(blk);
             data = this.prepareWriteData(blk, data);
             this.expectBytes(2, CMD_WRITE);
@@ -565,7 +565,9 @@ class BafangConfig {
                     if(num==val) this.data[blk][key] = num;
                 }
             }
-            this.onRead(null);
+            for (let blk of [BLK_BAS, BLK_PAS, BLK_THR]) {
+                this.onRead(blk);
+            }
         };
 
         fr.readAsText(f);
@@ -581,7 +583,8 @@ class BafangConfig {
     }
     saveFile() {
         for (let blk of [BLK_BAS, BLK_PAS, BLK_THR])
-            this.parseTable(blk);
+            if(!this.parseTable(blk))
+                return;
         //console.log(JSON.stringify(this.data, null, 2));
         const a = document.createElement("a");
         a.href = URL.createObjectURL(new Blob([JSON.stringify(this.data, null, 2)], {
