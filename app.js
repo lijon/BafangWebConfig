@@ -419,7 +419,7 @@ class BafangConfig {
             }
         }
         else {
-            this.logError(BLK_GEN, "Web Serial disabled or not supported by your browser.\nTry a recent version of Chrome, Opera or Edge.")
+            this.logError(BLK_GEN, "Web Serial disabled or not supported by your browser. Try a recent version of Chrome, Opera or Edge.")
         }
     }
     async write(data) {
