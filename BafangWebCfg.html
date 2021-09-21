@@ -135,6 +135,12 @@
     .read-write {
       /*float: left;*/
     }
+    .barchart {
+      /*background: #eee;*/
+/*      height: 200px;
+      width: 100%;
+*/      margin-top: 1em;
+    }
   </style>
 </head>
 <body>
@@ -218,6 +224,7 @@
       <tr><th>Assist</th><th>Current (%)</th><th>Speed (%)</th></tr>
       </tbody>
     </table>
+    <canvas class="barchart" id="chart_current" width=600 height=150></canvas>
   </div>
 
   <div class="block">
@@ -326,6 +333,9 @@
           e.setAttribute("min",0);
           e.setAttribute("max",100);
           e.classList.add("cfg");
+          e.addEventListener('change', () => {
+            updateChart();
+          });
         }
         bafang.onSerialConnect(false);
       }
@@ -385,7 +395,7 @@
       } else {
         alert('The File APIs are not fully supported in this browser.');
       }
-
+      updateChart();
     };
 
     bafang.parseTable = (blk) => {
@@ -468,6 +478,7 @@
       }
       if(blk) {
         updateTable(blockKeys[blk]);
+        updateChart();
       }
     };
     
@@ -536,6 +547,70 @@
     saveFileButton.addEventListener('click', () => {
       bafang.saveFile();
     });
+
+
+    const canvas = document.getElementById('chart_current');
+    function updateChart() {
+      /* TODO:
+      update when any relevant field changes
+      */
+      if (!canvas.getContext) return;
+      var ctx = canvas.getContext('2d');
+      const h = canvas.height;
+      const w = canvas.width;
+      ctx.clearRect(0, 0, w, h);
+      const xofs = 40;
+      const marg = 15;
+      const barDx = Math.floor((w-xofs*2)/10);
+      const barWidth = Math.floor(barDx*0.75);
+      ctx.strokeStyle = '#ccc';
+      ctx.font = "14px monospace";
+      ctx.fillStyle = 'black';
+      ctx.textBaseline = 'middle';
+      let dy = (h-marg*2)/4;
+      let amps = parseInt(document.getElementById("current_limit").value)||0;
+      ctx.beginPath();
+      ctx.setLineDash([3,3]);
+      for (let i = 0; i<5; i++) {
+        let y = Math.floor(marg+dy*i)+0.5;
+        let v = 1-(i/4);
+        ctx.moveTo(xofs,y);
+        ctx.lineTo(w-xofs,y);
+        ctx.textAlign = 'end';
+        ctx.fillText(v*100+'%',xofs-5,y);
+        ctx.textAlign = 'start';
+        ctx.fillText(Math.round(v*amps)+'A',w-xofs+5,y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.textBaseline = 'top';
+      ctx.textAlign = 'center';
+      let xofs2 = xofs+Math.floor((barDx-barWidth)/2);
+      let keep = (parseInt(document.getElementById("keep_current").value)||0)/100.0;
+      for (let x = 0; x < 10; x++) {
+        let e = document.getElementById("assist"+x+"_current");
+        let v = (parseInt(e.value) || 0)/100.0;
+        // let dy = Math.max(1,(h-marg*2)*v);
+        let dy = (h-marg*2)*v;
+        let xx = x*barDx+xofs2;
+        ctx.fillStyle = '#888';
+        ctx.fillRect(xx,h-dy-marg,barWidth,dy+1);
+        ctx.fillStyle = '#aaa';
+        ctx.fillRect(xx,h-dy*keep-marg,barWidth,dy*keep+1);
+        ctx.fillStyle = 'black';
+        ctx.fillText(x,xx+barWidth/2,h-marg+2);
+      }      
+    }
+
+    window.addEventListener('resize', () => {
+      canvas.width = canvas.parentNode.clientWidth;
+      updateChart();
+    });
+
+    for(let id of ["current_limit","keep_current"]) {
+      document.getElementById(id).addEventListener('change', updateChart);
+    }
+
 
     // navigator.serial.addEventListener("connect", (event) => {
       // TODO: Automatically open event.target or warn user a port is available.
